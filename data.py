@@ -12,7 +12,7 @@ def get_generator(input_file, fn=lambda line: line):
     return g
 
 
-def build_vocab(input_file):
+def build_vocab_trans(input_file, tag):
     vacab = {
         "<pad>":0,
         "<oov>":1,
@@ -22,27 +22,65 @@ def build_vocab(input_file):
         1:"<oov>",
     }
     char_set = set()
-    for line in get_generator(input_file)():
-        [[char_set.add(char) for char in word] for word in line.split()]
+
+    tag_types = len(tag)
+    transition=[[0 for j in range(tag_types)] for i in range(tag_types)]
+
+    def fn(line):
+        words = line.split()
+        chars, tags = [], []
+        for word in words:
+            if len(word)==1:
+                chars.append(word)
+                tags.append(params.tag["S"])
+            elif len(word)==2:
+                chars.append(word[0])
+                chars.append(word[1])
+                tags.append(params.tag["B"])
+                tags.append(params.tag["E"])
+            else:
+                for i in range(len(word)):
+                    chars.append(word[i])
+                    if i==0:
+                        tags.append(params.tag["B"])
+                    elif i==len(word)-1:
+                        tags.append(params.tag["E"])
+                    else:
+                        tags.append(params.tag["M"])
+        for i in range(len(tags)-1):
+            transition[tags[i]][tags[i+1]] += 1
+        return chars
+
+    for chars in get_generator(input_file, fn)():
+        for char in chars:
+            char_set.add(char)
+
+    for i in range(len(transition)):
+        sum_ = sum(transition[i])
+        for j in range(len(transition[i])):
+            transition[i][j] = transition[i][j]/sum_
 
     index = 2
     for char in char_set:
         vacab[char] = index
         vacabback[index] = char
         index+=1
-    return vacab, vacabback
+
+    return vacab, vacabback, transition
 
 
 def char2id(vocab, char):
     if char in vocab:
-        return vocab[char]
+        return int(vocab[char])
     else:
-        return vocab["<oov>"]
+        return int(vocab["<oov>"])
 
 
 def id2char(vocabback, id):
-    if id in vocabback:
-        return vocabback
+    if int(id) in vocabback:
+        return vocabback[int(id)]
+    elif str(id) in vocabback:
+        return vocabback[str(id)]
     else:
         return "<error>"
 
@@ -106,13 +144,42 @@ def get_trainning_input(params):
     return features
 
 
-def get_evaluate_input(params):
+def get_validation_input(params):
     features = None
     return features
 
 
 def get_inference_input(params):
-    features = None
+    def fn(line):
+        chars = []
+        for char in line:
+            chars.append(char2id(params.vocab, char))
+        return chars
+    dataset = tf.data.Dataset.from_generator(get_generator(params.input, fn), tf.int32)
+
+    # Append <pad> symbol
+    dataset = dataset.map(
+        lambda chars:
+            tf.concat([[tf.constant(params.vocab["<pad>"])]*params.window_size,
+                       chars, [tf.constant(params.vocab["<pad>"])]*params.window_size], axis=0),
+        num_parallel_calls=params.num_threads
+    )
+
+    # Convert to dictionary
+    dataset = dataset.map(
+        lambda chars: {
+            "chars": tf.to_int32(chars),
+            "start": tf.to_int32(tf.constant(params.window_size)),
+            "end": tf.to_int32(tf.shape(chars)[0]-params.window_size)
+        },
+        num_parallel_calls=params.num_threads
+    )
+
+    dataset = dataset.padded_batch(params.batch_size, padded_shapes={"chars": (None,),
+                                                                     "start": (), "end": ()})
+
+    iterator = dataset.make_one_shot_iterator()
+    features = iterator.get_next()
     return features
 
 
@@ -121,14 +188,17 @@ if __name__ == "__main__":
     pku_test = "/Users/ruanjiaqiang/Downloads/中文分词数据集/PKU&MSRA/icwb2-data/testing/pku_test.utf8"
     pku_gold = "/Users/ruanjiaqiang/Downloads/中文分词数据集/PKU&MSRA/icwb2-data/gold/pku_test_gold.utf8"
     params = tf.contrib.training.HParams(
-        input = pku_train,
+        input = pku_test,
         tag = {"B":0, "M":1, "E":2, "S":3},
-        vocab = None,
+        vocab = {"<oov>":1,
+                 "<pad>":0},
+        num_threads = 6,
+        window_size=3,
+        batch_size = 1,
     )
-    if params.vocab is None:
-        params.vocab, params.vocabback = build_vocab(params.input)
-
-    features = get_trainning_input(params)
+    res = build_vocab_trans(pku_train, params.tag)
+    print(res)
+    features = get_inference_input(params)
     # print(features)
     with tf.Session() as sess:
         while True:

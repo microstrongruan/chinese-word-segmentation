@@ -1,5 +1,6 @@
 import tensorflow as tf
-
+import data
+import numpy as np
 
 def linear_layer(inputs, output_size, is_bias=True, name="linear"):
     # get params
@@ -15,52 +16,52 @@ def linear_layer(inputs, output_size, is_bias=True, name="linear"):
     return outputs
 
 
-# def _copy_through(time, length, output, new_output):
-#     copy_cond = (time >= length)
-#     if isinstance(new_output, tf.nn.rnn_cell.LSTMStateTuple):
-#         c, h = output
-#         c_new, h_new = new_output
-#         c_out = tf.where(copy_cond, c, c_new)
-#         h_out = tf.where(copy_cond, h, h_new)
-#         return tf.nn.rnn_cell.LSTMStateTuple(c_out, h_out)
-#     return tf.where(copy_cond, output, new_output)
-#
-#
-# def lstm_layer(cell, inputs, inputs_length, initial_state=None):
-#     # get params
-#     output_size = cell.output_size
-#     batch = tf.shape(inputs)[0]
-#     time_steps = tf.shape(inputs)[1]
-#     dtype = inputs.dtype
-#
-#     # prepare tensor for iteration
-#     zero_output = tf.zeros([batch, output_size], dtype)
-#     if initial_state is None: initial_state = cell.zero_state(batch, dtype)
-#     input_ta = tf.TensorArray(dtype, time_steps, tensor_array_name="input_array")
-#     output_ta = tf.TensorArray(dtype, time_steps, tensor_array_name="output_array")
-#     input_ta = input_ta.unstack(tf.transpose(inputs, [1, 0, 2]))
-#     time = tf.constant(0, dtype=tf.int32, name="time")
-#     loop_vars = (time, output_ta, initial_state)
-#
-#     def loop_func(t, out_ta, state):
-#         inp_t = input_ta.read(t)
-#         cell_output, new_state = cell(inp_t, state)
-#         cell_output = _copy_through(t, inputs_length, zero_output, cell_output)
-#         new_state = _copy_through(t, inputs_length, state, new_state)
-#         out_ta = out_ta.write(t, cell_output)
-#         return t + 1, out_ta, new_state
-#
-#     outputs = tf.while_loop(lambda t, *_: t < time_steps, loop_func,
-#                             loop_vars, parallel_iterations=32,
-#                             swap_memory=True)
-#
-#     output_final_ta = outputs[1]
-#     final_state = outputs[2]
-#
-#     all_output = output_final_ta.stack()
-#     all_output.set_shape([None, None, output_size])
-#     all_output = tf.transpose(all_output, [1, 0, 2])
-#     return all_output, final_state
+def _copy_through(time, length, output, new_output):
+    copy_cond = (time >= length)
+    if isinstance(new_output, tf.nn.rnn_cell.LSTMStateTuple):
+        c, h = output
+        c_new, h_new = new_output
+        c_out = tf.where(copy_cond, c, c_new)
+        h_out = tf.where(copy_cond, h, h_new)
+        return tf.nn.rnn_cell.LSTMStateTuple(c_out, h_out)
+    return tf.where(copy_cond, output, new_output)
+
+
+def lstm_layer(cell, inputs, inputs_length, initial_state=None):
+    # get params
+    output_size = cell.output_size
+    batch = tf.shape(inputs)[0]
+    time_steps = tf.shape(inputs)[1]
+    dtype = inputs.dtype
+
+    # prepare tensor for iteration
+    zero_output = tf.zeros([batch, output_size], dtype)
+    if initial_state is None: initial_state = cell.zero_state(batch, dtype)
+    input_ta = tf.TensorArray(dtype, time_steps, tensor_array_name="input_array")
+    output_ta = tf.TensorArray(dtype, time_steps, tensor_array_name="output_array")
+    input_ta = input_ta.unstack(tf.transpose(inputs, [1, 0, 2]))
+    time = tf.constant(0, dtype=tf.int32, name="time")
+    loop_vars = (time, output_ta, initial_state)
+
+    def loop_func(t, out_ta, state):
+        inp_t = input_ta.read(t)
+        cell_output, new_state = cell(inp_t, state)
+        cell_output = _copy_through(t, inputs_length, zero_output, cell_output)
+        new_state = _copy_through(t, inputs_length, state, new_state)
+        out_ta = out_ta.write(t, cell_output)
+        return t + 1, out_ta, new_state
+
+    outputs = tf.while_loop(lambda t, *_: t < time_steps, loop_func,
+                            loop_vars, parallel_iterations=32,
+                            swap_memory=True)
+
+    output_final_ta = outputs[1]
+    final_state = outputs[2]
+
+    all_output = output_final_ta.stack()
+    all_output.set_shape([None, None, output_size])
+    all_output = tf.transpose(all_output, [1, 0, 2])
+    return all_output, final_state
 #
 
 
@@ -68,6 +69,7 @@ def model_x(hidden_size, dropout, inputs, inputs_length, model):
     if int(model)==1:
         # build cell
         lstm_cell = tf.nn.rnn_cell.LSTMCell(hidden_size, reuse=tf.AUTO_REUSE, name="lstm_cell")
+        # lstm_cell = tf.nn.rnn_cell.LSTMCell(hidden_size, reuse=tf.AUTO_REUSE)
         lstm_cell = tf.nn.rnn_cell.DropoutWrapper(lstm_cell, output_keep_prob=1-dropout)
 
         # build layer
@@ -108,13 +110,21 @@ def model_graph(params, features, mode="instantiate"):
     # build linear layer
     logits = linear_layer(outputs, tag_types)
 
-    if mode == "inference":
+    if mode == "inference" or mode == "instantiate":
         logits = logits * tf.expand_dims(char_mask, -1)
         return logits
 
     # build softmax layer
     ce = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=features["tags"])
 
+    # for monitor
+    features["char_mask"]=char_mask
+    features["ce"]=ce
+    features["prediction"]=tf.argmax(logits,axis=-1)
+    # wrapper = lambda x: data.id2char(params.vocabback, x)
+    # id2char = lambda x: tf.py_func(wrapper, [x], tf.string)
+    # line2char = lambda x: tf.map_fn(id2char, x, tf.string)
+    # features["original"] = tf.map_fn(line2char, chars, tf.string)
     # build loss
     loss = tf.reduce_sum(ce * char_mask) / tf.reduce_sum(char_mask)
 
@@ -127,6 +137,10 @@ class ModelManger:
         self.base_params = base_params
         self.model = base_params.model
         self.scope = scope or "model_"+self.model
+
+    @staticmethod
+    def get_name(model):
+        return "model_"+model
 
     def instantiate(self, features):
         with tf.variable_scope(self.scope, reuse=tf.AUTO_REUSE):
@@ -142,7 +156,7 @@ class ModelManger:
 
         return fn
 
-    def get_inference_func(self, params):
+    def get_inference_func(self, params=None):
         scope = self.scope
         params = params or self.base_params
         params.dropout = 0.0

@@ -41,6 +41,7 @@ def build_params(args):
             # data
             vocab=None,
             vocabback=None,
+            transition=None,
             tag={"B": 0, "M": 1, "E": 2, "S": 3},
             num_threads=6,
             buffer_size=512,
@@ -88,7 +89,7 @@ def build_params(args):
                 params.add_hparam(k, v)
         return params
 
-    def merge_parameters(params1, params2): # params2 have higher prior
+    def merge_parameters(params1, params2): # params2 have SWANhigher prior
         params = tf.contrib.training.HParams()
         for (k, v) in params1.values().items():
             params.add_hparam(k, v)
@@ -129,7 +130,7 @@ def build_params(args):
     params = merge_parameters(params1, params2)
     params = overwrite_parameters(params, args)
     if params.vocab is None:
-        params.vocab, params.vocabback = data.build_vocab(params.input)
+        params.vocab, params.vocabback, params.transition = data.build_vocab_trans(params.input, params.tag)
     export_parameters(args.output, params)
 
     return params
@@ -262,7 +263,11 @@ def main(args):
                 save_checkpoint_secs=None, config=config) as sess:
             while not sess.should_stop():
                 sess.run(train_op)
-
-
+                # res = sess.run(features)
+                # print('------one res----')
+                # for k,v in res.items():
+                #     print("k", k)
+                #     print("v", v)
+                # x = input()
 if __name__ == "__main__":
     main(parse_args())
