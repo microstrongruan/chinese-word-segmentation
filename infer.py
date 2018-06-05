@@ -72,6 +72,9 @@ def build_params(args):
             # validate
             validate_steps=1000,
             validate_secs=None,
+
+            # infer
+            search_policy="viterbi",
         )
         return params
 
@@ -252,8 +255,8 @@ def main(args):
         assign_op = build_assign(params, model_var_lists)
 
         # build logits
-        logits = build_predictions(model_fns, features)
-        features["logits"] = logits
+        logprobs = build_predictions(model_fns, features)
+        features["logprobs"] = logprobs
 
         # build config
         session_creater = build_session_creator(params)

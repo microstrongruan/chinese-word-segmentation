@@ -68,9 +68,11 @@ def build_params(args):
             keep_checkpoint_max=5,
             device_list=[0],
 
-            # validate
+            # validation
             validate_steps=1000,
             validate_secs=None,
+            validate_max_to_keep=10,
+
         )
         return params
 
@@ -130,7 +132,7 @@ def build_params(args):
     params = merge_parameters(params1, params2)
     params = overwrite_parameters(params, args)
     if params.vocab is None:
-        params.vocab, params.vocabback, params.transition = data.build_vocab_trans(params.input, params.tag)
+        params.vocab, params.vocabback, params.transtion = data.build_vocab_trans(params.input, params.tag)
     export_parameters(args.output, params)
 
     return params
@@ -177,7 +179,7 @@ def build_train_op(params, loss, global_step, learning_rate, opt):
     return train_op
 
 
-def build_train_hooks(params, global_step, loss, features):
+def build_train_hooks(params, global_step, loss, features, validate_initializer, validate_op):
     train_hooks = [
         tf.train.StopAtStepHook(last_step=params.train_steps),
         tf.train.NanTensorHook(loss),
@@ -200,8 +202,9 @@ def build_train_hooks(params, global_step, loss, features):
         )
     ]
     if params.validation and params.reference:
-        train_hooks.append(hook.ValidationHook(validateion=params.validation,
-                                               reference=params.reference,
+        train_hooks.append(hook.ValidationHook(validate_initializer=validate_initializer,
+                                               validate_op=validate_op,
+                                               max_to_keep=params.validate_max_to_keep,
                                                output=params.output,
                                                validate_secs=params.validate_secs or None,
                                                validate_steps=params.validate_steps or None))
@@ -238,7 +241,6 @@ def main(args):
         # # build loss under single or multi GPU
         loss =  model_manager.get_training_func(params)(features)
 
-
         # build global step
         global_step = tf.train.get_or_create_global_step()
 
@@ -251,8 +253,12 @@ def main(args):
         # build train op
         train_op = build_train_op(params, loss, global_step, learning_rate, opt)
 
+        # build validate op
+        validate_initializer, validate_features = data.get_validation_input(params)
+        validate_op =  model_manager.get_validation_fn(params)(validate_features)
+
         # build hooks
-        train_hooks = build_train_hooks(params, global_step, loss, features)
+        train_hooks = build_train_hooks(params, global_step, loss, features, validate_initializer, validate_op)
 
         # build config
         config = build_config(params)
@@ -269,5 +275,7 @@ def main(args):
                 #     print("k", k)
                 #     print("v", v)
                 # x = input()
+
+
 if __name__ == "__main__":
     main(parse_args())

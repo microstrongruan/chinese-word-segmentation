@@ -110,9 +110,13 @@ def model_graph(params, features, mode="instantiate"):
     # build linear layer
     logits = linear_layer(outputs, tag_types)
 
-    if mode == "inference" or mode == "instantiate":
+    if mode=="instantiate":
+        return None
+
+    if mode == "inference":
         logits = logits * tf.expand_dims(char_mask, -1)
-        return logits
+        logprobs = logits - tf.reduce_logsumexp(logits, axis=2, keep_dims=True)
+        return logprobs
 
     # build softmax layer
     ce = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=features["tags"])
@@ -121,14 +125,9 @@ def model_graph(params, features, mode="instantiate"):
     features["char_mask"]=char_mask
     features["ce"]=ce
     features["prediction"]=tf.argmax(logits,axis=-1)
-    # wrapper = lambda x: data.id2char(params.vocabback, x)
-    # id2char = lambda x: tf.py_func(wrapper, [x], tf.string)
-    # line2char = lambda x: tf.map_fn(id2char, x, tf.string)
-    # features["original"] = tf.map_fn(line2char, chars, tf.string)
-    # build loss
     loss = tf.reduce_sum(ce * char_mask) / tf.reduce_sum(char_mask)
 
-    if mode=="train":
+    if mode=="train" or mode=="validation":
         return loss
 
 
@@ -153,6 +152,17 @@ class ModelManger:
         def fn(features):
             with tf.variable_scope(scope, reuse=tf.AUTO_REUSE):
                 return model_graph(params,features,mode="train")
+
+        return fn
+
+    def get_validation_fn(self, params=None):
+        scope = self.scope
+        params = params or self.base_params
+        params.dropout = 0.0
+
+        def fn(features):
+            with tf.variable_scope(scope, reuse=tf.AUTO_REUSE):
+                return model_graph(params,features,mode="validation")
 
         return fn
 
