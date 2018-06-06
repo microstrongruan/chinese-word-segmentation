@@ -266,12 +266,14 @@ def main(args):
 
         # start session
         with tf.train.MonitoredTrainingSession(
-                checkpoint_dir=params.output, hooks=train_hooks,
+                checkpoint_dir=params.output, hooks=[],
                 save_checkpoint_secs=None, config=config) as sess:
+            sess.run(validate_initializer)
             while not sess.should_stop():
                 # sess.run(train_op)
-                res = sess.run(features)
+                # res = sess.run(features)
                 print('------one res----')
+                res = sess.run(validate_features)
                 for k,v in res.items():
                     print("k", k)
                     if k=="origin":
