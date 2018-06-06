@@ -221,6 +221,7 @@ def build_config(params):
     if params.device_list:
         device_str = ",".join([str(i) for i in params.device_list])
         config.gpu_options.visible_device_list = device_str
+        config.gpu_options.allow_growth=True
 
     return config
 
