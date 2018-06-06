@@ -22,14 +22,17 @@ CTB6TRAIN="/home/rjq/project/cws/CTB6/trainSegmenter/data/ctb6.train.seg"
 CTB6TEST="/home/rjq/project/cws/CTB6/trainSegmenter/data/ctb6.test.unseg"
 CTB6GOLD="/home/rjq/project/cws/CTB6/trainSegmenter/data/ctb6.test.seg"
 
+
 INPUT=$PKUTEST
-DEVICE=5
-CHECKPOINTS=debug/model.ckpt-
+DEVICE=7
+MODEL=8502
+CHECKPOINTS=train/model.ckpt-$MODEL
+OUTPUT=test/pkutest-$MODEL
 JSON=train/params.json
 
 python /home/rjq/project/chinese-word-segmentation/infer.py \
     --input $INPUT \
-    --output test \
+    --output  $OUTPUT\
     --checkpoints $CHECKPOINTS \
     --json $JSON \
     --model 1 \

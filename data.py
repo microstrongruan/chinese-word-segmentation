@@ -207,7 +207,7 @@ def get_validation_input(params):
 def get_inference_input(params):
     def fn(line):
         chars = []
-        for char in line:
+        for char in line.strip():
             chars.append(char2id(params.vocab, char))
         return chars, line
 
