@@ -95,7 +95,7 @@ def model_x(hidden_size, dropout, inputs, inputs_length, model, params):
 
         # outputs [batch_size, time_steps, hidden_size]
         channel = inputs.get_shape()[1].value
-        filters = tf.ones([params.window*2+1, channel, channel],dtype=tf.float32)
+        filters = tf.ones([params.window_size*2+1, channel, channel],dtype=tf.float32)
         outputs = tf.nn.conv1d(outputs, filters, 1, "SAME", data_format="NCW", name="conv_1d")
         print("====debug====")
         print(outputs)
@@ -110,13 +110,26 @@ def model_x(hidden_size, dropout, inputs, inputs_length, model, params):
         outputs, final_state = tf.nn.dynamic_rnn(multi_lstm_cell, inputs, sequence_length=inputs_length, dtype=inputs.dtype)
         # outputs [batch_size, time_steps, hidden_size]
         channel = inputs.get_shape()[1].value
-        filters = tf.ones([params.window*2+1, channel, channel],dtype=tf.float32)
+        filters = tf.ones([params.window_size*2+1, channel, channel],dtype=tf.float32)
         outputs = tf.nn.conv1d(outputs, filters, 1, "SAME", data_format="NCW", name="conv_1d")
         print("====debug====")
         print(outputs)
     else:
         raise NotImplementedError()
     return outputs
+
+
+def loss_x(params, features, logits, char_mask):
+    if params.loss_criterion=="cross-entropy":
+        ce = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=features["tags"])
+        loss = tf.reduce_sum(ce * char_mask) / tf.reduce_sum(char_mask)
+    elif params.loss_criterion=="max-margin":
+        loss = None
+
+    else:
+        raise NotImplementedError()
+    return loss
+
 
 
 def model_graph(params, features, mode="instantiate"):
@@ -156,13 +169,11 @@ def model_graph(params, features, mode="instantiate"):
         return logprobs
 
     # build softmax layer
-    ce = tf.nn.sparse_softmax_cross_entropy_with_logits(logits=logits, labels=features["tags"])
+    loss = loss_x(params, features, logits, char_mask)
 
     # for monitor
     features["char_mask"]=char_mask
-    features["ce"]=ce
     features["prediction"]=tf.argmax(logits,axis=-1)
-    loss = tf.reduce_sum(ce * char_mask) / tf.reduce_sum(char_mask)
 
     if mode=="train" or mode=="validation":
         return loss

@@ -51,6 +51,7 @@ def build_params(args):
             # model
             hidden_size=620,
             dropout=0.2,
+            loss_criterion="cross-entropy", # cross-entropy, max-margin
 
             # opt
             learning_rate=1e-4,
