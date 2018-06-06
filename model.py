@@ -92,10 +92,13 @@ def model_x(hidden_size, dropout, inputs, inputs_length, model, params):
 
         # build layer
         outputs, final_state = tf.nn.dynamic_rnn(lstm_cell, inputs, sequence_length=inputs_length, dtype=inputs.dtype)
+        print("====debug====")
+        print(outputs)
 
         # outputs [batch_size, time_steps, hidden_size]
         channel = inputs.get_shape()[1].value
-        filters = tf.ones([params.window_size*2+1, channel, channel],dtype=tf.float32)
+        filters = tf.get_variable("filter", [params.window_size*2+1, channel, channel], tf.float32,
+                                  tf.ones_initializer,trainable=False)
         outputs = tf.nn.conv1d(outputs, filters, 1, "SAME", data_format="NCW", name="conv_1d")
         print("====debug====")
         print(outputs)
@@ -108,9 +111,13 @@ def model_x(hidden_size, dropout, inputs, inputs_length, model, params):
 
         # build layer
         outputs, final_state = tf.nn.dynamic_rnn(multi_lstm_cell, inputs, sequence_length=inputs_length, dtype=inputs.dtype)
+        print("====debug====")
+        print(outputs)
+
         # outputs [batch_size, time_steps, hidden_size]
         channel = inputs.get_shape()[1].value
-        filters = tf.ones([params.window_size*2+1, channel, channel],dtype=tf.float32)
+        filters = tf.get_variable("filter", [params.window_size*2+1, channel, channel], tf.float32,
+                                  tf.ones_initializer,trainable=False)
         outputs = tf.nn.conv1d(outputs, filters, 1, "SAME", data_format="NCW", name="conv_1d")
         print("====debug====")
         print(outputs)
