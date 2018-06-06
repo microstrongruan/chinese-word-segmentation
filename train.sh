@@ -13,9 +13,17 @@ PKUTRAIN="/home/rjq/project/cws/PKU&MSRA/icwb2-data/training/pku_training.utf8"
 PKUTEST="/home/rjq/project/cws/PKU&MSRA/icwb2-data/testing/pku_test.utf8"
 PKUGOLD="/home/rjq/project/cws/PKU&MSRA/icwb2-data/gold/pku_test_gold.utf8"
 
-INPUT=$PKUTRAIN
-VALIDATION=$PKUTEST
-REFERENCE=$PKUGOLD
+MSRATRAIN="/home/rjq/project/cws/PKU&MSRA/icwb2-data/training/msr_training.utf8"
+MSRATEST="/home/rjq/project/cws/PKU&MSRA/icwb2-data/testing/msr_test.utf8"
+MSRAGOLD="/home/rjq/project/cws/PKU&MSRA/icwb2-data/gold/msr_test_gold.utf8"
+
+CTB6TRAIN="/home/rjq/project/cws/CTB6/trainSegmenter/data/ctb6.train.seg"
+CTB6TEST="/home/rjq/project/cws/CTB6/trainSegmenter/data/ctb6.test.unseg"
+CTB6GOLD="/home/rjq/project/cws/CTB6/trainSegmenter/data/ctb6.test.seg"
+
+INPUT=$CTB6TRAIN
+VALIDATION=$CTB6TEST
+REFERENCE=$CTB6GOLD
 DEVICE=6
 
 python /home/rjq/project/chinese-word-segmentation/train.py \
@@ -24,4 +32,4 @@ python /home/rjq/project/chinese-word-segmentation/train.py \
     --model 1 \
     --validation $VALIDATION \
     --reference $REFERENCE \
-    --parameters device_list=[$DEVICE],batch_size=128,validate_steps=20
+    --parameters device_list=[$DEVICE],batch_size=128,validate_steps=500,hidden_size=1000

@@ -65,18 +65,55 @@ def lstm_layer(cell, inputs, inputs_length, initial_state=None):
 #
 
 
-def model_x(hidden_size, dropout, inputs, inputs_length, model):
+def model_x(hidden_size, dropout, inputs, inputs_length, model, params):
     if int(model)==1:
         # build cell
         lstm_cell = tf.nn.rnn_cell.LSTMCell(hidden_size, reuse=tf.AUTO_REUSE, name="lstm_cell")
-        # lstm_cell = tf.nn.rnn_cell.LSTMCell(hidden_size, reuse=tf.AUTO_REUSE)
         lstm_cell = tf.nn.rnn_cell.DropoutWrapper(lstm_cell, output_keep_prob=1-dropout)
 
         # build layer
         outputs, final_state = tf.nn.dynamic_rnn(lstm_cell, inputs, sequence_length=inputs_length, dtype=inputs.dtype)
-        # outputs, final_state = lstm_layer(lstm_cell, inputs, inputs_length)
+
     elif int(model)==2:
-        outputs = None
+        # build cell
+        lstm_cell_1 = tf.nn.rnn_cell.LSTMCell(hidden_size, reuse=tf.AUTO_REUSE, name="lstm_cell_1")
+        lstm_cell_1 = tf.nn.rnn_cell.DropoutWrapper(lstm_cell_1, output_keep_prob=1-dropout)
+        lstm_cell_2 = tf.nn.rnn_cell.LSTMCell(hidden_size, reuse=tf.AUTO_REUSE, name="lstm_cell_2")
+        lstm_cell_2 = tf.nn.rnn_cell.DropoutWrapper(lstm_cell_2, output_keep_prob=1-dropout)
+        multi_lstm_cell = tf.nn.rnn_cell.MultiRNNCell([lstm_cell_1, lstm_cell_2])
+
+        # build layer
+        outputs, final_state = tf.nn.dynamic_rnn(multi_lstm_cell, inputs, sequence_length=inputs_length, dtype=inputs.dtype)
+
+    elif int(model)==3:
+        # build cell
+        lstm_cell = tf.nn.rnn_cell.LSTMCell(hidden_size, reuse=tf.AUTO_REUSE, name="lstm_cell")
+        lstm_cell = tf.nn.rnn_cell.DropoutWrapper(lstm_cell, output_keep_prob=1-dropout)
+
+        # build layer
+        outputs, final_state = tf.nn.dynamic_rnn(lstm_cell, inputs, sequence_length=inputs_length, dtype=inputs.dtype)
+
+        # outputs [batch_size, time_steps, hidden_size]
+        channel = inputs.get_shape()[1].value
+        filters = tf.ones([params.window*2+1, channel, channel],dtype=tf.float32)
+        outputs = tf.nn.conv1d(outputs, filters, 1, "SAME", data_format="NCW", name="conv_1d")
+        print("====debug====")
+        print(outputs)
+    elif int(model)==4:
+        lstm_cell_1 = tf.nn.rnn_cell.LSTMCell(hidden_size, reuse=tf.AUTO_REUSE, name="lstm_cell_1")
+        lstm_cell_1 = tf.nn.rnn_cell.DropoutWrapper(lstm_cell_1, output_keep_prob=1-dropout)
+        lstm_cell_2 = tf.nn.rnn_cell.LSTMCell(hidden_size, reuse=tf.AUTO_REUSE, name="lstm_cell_2")
+        lstm_cell_2 = tf.nn.rnn_cell.DropoutWrapper(lstm_cell_2, output_keep_prob=1-dropout)
+        multi_lstm_cell = tf.nn.rnn_cell.MultiRNNCell([lstm_cell_1, lstm_cell_2])
+
+        # build layer
+        outputs, final_state = tf.nn.dynamic_rnn(multi_lstm_cell, inputs, sequence_length=inputs_length, dtype=inputs.dtype)
+        # outputs [batch_size, time_steps, hidden_size]
+        channel = inputs.get_shape()[1].value
+        filters = tf.ones([params.window*2+1, channel, channel],dtype=tf.float32)
+        outputs = tf.nn.conv1d(outputs, filters, 1, "SAME", data_format="NCW", name="conv_1d")
+        print("====debug====")
+        print(outputs)
     else:
         raise NotImplementedError()
     return outputs
@@ -105,7 +142,7 @@ def model_graph(params, features, mode="instantiate"):
     inputs = inputs * tf.expand_dims(char_mask, -1)
     inputs_length = features["end"]+features["start"]
 
-    outputs = model_x(hidden_size, dropout, inputs, inputs_length, params.model)
+    outputs = model_x(hidden_size, dropout, inputs, inputs_length, params.model, params)
 
     # build linear layer
     logits = linear_layer(outputs, tag_types)
