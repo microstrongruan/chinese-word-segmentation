@@ -103,6 +103,7 @@ def model_x(hidden_size, dropout, inputs, inputs_length, model, params):
                                   tf.ones_initializer,trainable=False)
         strides = [1, 1, 1, 1]
         outputs = tf.nn.conv2d(outputs, filters, strides, padding="SAME", data_format="NHWC")
+        outputs = tf.squeeze(outputs, -1)
         print("====debug====")
         print(outputs)
     elif int(model)==4:
@@ -124,6 +125,8 @@ def model_x(hidden_size, dropout, inputs, inputs_length, model, params):
                                   tf.ones_initializer,trainable=False)
         strides = [1, 1, 1, 1]
         outputs = tf.nn.conv2d(outputs, filters, strides, padding="SAME", data_format="NHWC")
+        outputs = tf.squeeze(outputs, -1)
+
         print("====debug====")
         print(outputs)
     else:
