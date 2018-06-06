@@ -112,7 +112,7 @@ def build_params(args):
         params.input = args.input
         params.output = args.output
         params.validation = args.validation or params.validation
-        params.reference = args.validation or params.reference
+        params.reference = args.reference or params.reference
         params.model = args.model
         params.parse(args.parameters)
         return params
