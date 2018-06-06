@@ -266,22 +266,22 @@ def main(args):
 
         # start session
         with tf.train.MonitoredTrainingSession(
-                checkpoint_dir=params.output, hooks=[],
+                checkpoint_dir=params.output, hooks=train_hooks,
                 save_checkpoint_secs=None, config=config) as sess:
             sess.run(validate_initializer)
             while not sess.should_stop():
-                # sess.run(train_op)
+                sess.run(train_op)
                 # res = sess.run(features)
-                print('------one res----')
-                res = sess.run(validate_features)
-                for k,v in res.items():
-                    print("k", k)
-                    if k=="origin":
-                        print("v", [vv.decode("utf-8") for vv in v])
-                    else:
-                        print("v", v)
-                    print("v_len", v.shape)
-                x = input()
+                # print('------one res----')
+                # res = sess.run(validate_features)
+                # for k,v in res.items():
+                #     print("k", k)
+                #     if k=="origin":
+                #         print("v", [vv.decode("utf-8") for vv in v])
+                #     else:
+                #         print("v", v)
+                #     print("v_len", v.shape)
+                # x = input()
 
 
 if __name__ == "__main__":
