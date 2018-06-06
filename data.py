@@ -106,16 +106,17 @@ def get_trainning_input(params):
                         tags.append(params.tag["E"])
                     else:
                         tags.append(params.tag["M"])
-        return chars, tags
+        return line, chars, tags
 
-    dataset = tf.data.Dataset.from_generator(get_generator(params.input, fn), (tf.int32, tf.int32),
-                                             ((None,), (None,)))
+    dataset = tf.data.Dataset.from_generator(get_generator(params.input, fn), (tf.string, tf.int32, tf.int32),
+                                             ((), (None,), (None,)))
     dataset = dataset.shuffle(params.buffer_size)
     dataset = dataset.repeat()
 
     # Append <pad> symbol
     dataset = dataset.map(
-        lambda chars, tags:(
+        lambda line, chars, tags:(
+            line,
             tf.concat([[tf.constant(params.vocab["<pad>"])]*params.window_size,
                        chars, [tf.constant(params.vocab["<pad>"])]*params.window_size], axis=0),
             tf.concat([[tf.constant(params.vocab["<pad>"])]*params.window_size,
@@ -126,7 +127,8 @@ def get_trainning_input(params):
 
     # Convert to dictionary
     dataset = dataset.map(
-        lambda chars, tags: {
+        lambda line, chars, tags: {
+            "origin": line,
             "chars": tf.to_int32(chars),
             "tags": tf.to_int32(tags),
             "start": tf.to_int32(tf.constant(params.window_size)),
@@ -135,7 +137,7 @@ def get_trainning_input(params):
         num_parallel_calls=params.num_threads
     )
 
-    dataset = dataset.padded_batch(params.batch_size, padded_shapes={"chars": (None,), "tags": (None,),
+    dataset = dataset.padded_batch(params.batch_size, padded_shapes={"origin":(),"chars": (None,), "tags": (None,),
                                                                      "start": (), "end": ()})
 
     iterator = dataset.make_one_shot_iterator()
@@ -165,13 +167,14 @@ def get_validation_input(params):
                         tags.append(params.tag["E"])
                     else:
                         tags.append(params.tag["M"])
-        return chars, tags
+        return line, chars, tags
 
-    dataset = tf.data.Dataset.from_generator(get_generator(params.reference, fn), (tf.int32, tf.int32),
-                                             ((None,), (None,)))
+    dataset = tf.data.Dataset.from_generator(get_generator(params.reference, fn), (tf.string,tf.int32, tf.int32),
+                                             ((),(None,), (None,)))
     # Append <pad> symbol
     dataset = dataset.map(
-        lambda chars, tags:(
+        lambda line, chars, tags:(
+            line,
             tf.concat([[tf.constant(params.vocab["<pad>"])]*params.window_size,
                        chars, [tf.constant(params.vocab["<pad>"])]*params.window_size], axis=0),
             tf.concat([[tf.constant(params.vocab["<pad>"])]*params.window_size,
@@ -182,7 +185,8 @@ def get_validation_input(params):
 
     # Convert to dictionary
     dataset = dataset.map(
-        lambda chars, tags: {
+        lambda line, chars, tags: {
+            "origin": line,
             "chars": tf.to_int32(chars),
             "tags": tf.to_int32(tags),
             "start": tf.to_int32(tf.constant(params.window_size)),
@@ -191,7 +195,7 @@ def get_validation_input(params):
         num_parallel_calls=params.num_threads
     )
 
-    dataset = dataset.padded_batch(params.batch_size, padded_shapes={"chars": (None,), "tags": (None,),
+    dataset = dataset.padded_batch(params.batch_size, padded_shapes={"origin":(),"chars": (None,), "tags": (None,),
                                                                      "start": (), "end": ()})
 
     iterator = dataset.make_initializable_iterator()
@@ -243,6 +247,22 @@ if __name__ == "__main__":
     pku_test = "/Users/ruanjiaqiang/Downloads/中文分词数据集/PKU&MSRA/icwb2-data/testing/pku_test.utf8"
     pku_gold = "/Users/ruanjiaqiang/Downloads/中文分词数据集/PKU&MSRA/icwb2-data/gold/pku_test_gold.utf8"
     params = tf.contrib.training.HParams(
+        input = pku_train,
+        reference=pku_gold,
+        validation=pku_test,
+        tag = {"B":0, "M":1, "E":2, "S":3},
+        vocab = {"<oov>":1,
+                 "<pad>":0},
+        num_threads = 6,
+        window_size=3,
+        batch_size = 2,
+        buffer_size = 100,
+    )
+    res = build_vocab_trans(pku_train, params.tag)
+    features = get_trainning_input(params)
+    validation_initialize, validation_features = get_validation_input(params)
+
+    params_infer = tf.contrib.training.HParams(
         input = pku_test,
         tag = {"B":0, "M":1, "E":2, "S":3},
         vocab = {"<oov>":1,
@@ -250,12 +270,19 @@ if __name__ == "__main__":
         num_threads = 6,
         window_size=3,
         batch_size = 2,
+        buffer_size = 100,
     )
-    res = build_vocab_trans(pku_train, params.tag)
-    print(res)
-    features = get_inference_input(params)
-    # print(features)
+
+    features_infer = get_inference_input(params_infer)
+
     with tf.Session() as sess:
         while True:
-            # print([[id2char(char) for char in line] for line in sess.run(features)])
-            print(sess.run(features))
+            # sess.run(validation_initialize)
+            res  = sess.run(features_infer)
+            for k, v in res.items():
+                print("k", k)
+                if k=="origin":
+                    print("v", [vv.decode("utf-8") for vv in v])
+                else:
+                    print("v", v)
+            x = input()

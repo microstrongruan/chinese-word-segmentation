@@ -181,6 +181,7 @@ def model_graph(params, features, mode="instantiate"):
 
     # for monitor
     features["char_mask"]=char_mask
+    features["logits"]=logits
     features["prediction"]=tf.argmax(logits,axis=-1)
 
     if mode=="train" or mode=="validation":
