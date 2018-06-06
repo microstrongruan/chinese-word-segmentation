@@ -95,11 +95,14 @@ def model_x(hidden_size, dropout, inputs, inputs_length, model, params):
         print("====debug====")
         print(outputs)
 
-        # outputs [batch_size, time_steps, hidden_size]
-        channel = inputs.get_shape()[1].value
-        filters = tf.get_variable("filter", [params.window_size*2+1, channel, channel], tf.float32,
+        # outputs [batch_size, time_steps, hidden_size] -> [batch_size, hight, width, channel]
+        # filter [hight, width, inchannel, outchannel]
+        # stride [1, stride_hight, stride_width, 1]
+        outputs = tf.expand_dims(outputs,-1)
+        filters = tf.get_variable("filter", [params.window_size*2+1, 1, 1, 1], tf.float32,
                                   tf.ones_initializer,trainable=False)
-        outputs = tf.nn.conv1d(outputs, filters, 1, "SAME", data_format="NCW", name="conv_1d")
+        strides = [1, 1, 1, 1]
+        outputs = tf.nn.conv2d(outputs, filters, strides, padding="SAME", data_format="NHWC")
         print("====debug====")
         print(outputs)
     elif int(model)==4:
@@ -115,10 +118,12 @@ def model_x(hidden_size, dropout, inputs, inputs_length, model, params):
         print(outputs)
 
         # outputs [batch_size, time_steps, hidden_size]
-        channel = inputs.get_shape()[1].value
-        filters = tf.get_variable("filter", [params.window_size*2+1, channel, channel], tf.float32,
+        # channel = inputs.get_shape()[1].value
+        outputs = tf.expand_dims(outputs,-1)
+        filters = tf.get_variable("filter", [params.window_size*2+1, 1, 1, 1], tf.float32,
                                   tf.ones_initializer,trainable=False)
-        outputs = tf.nn.conv1d(outputs, filters, 1, "SAME", data_format="NCW", name="conv_1d")
+        strides = [1, 1, 1, 1]
+        outputs = tf.nn.conv2d(outputs, filters, strides, padding="SAME", data_format="NHWC")
         print("====debug====")
         print(outputs)
     else:
