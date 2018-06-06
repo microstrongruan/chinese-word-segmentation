@@ -268,7 +268,6 @@ def main(args):
         with tf.train.MonitoredTrainingSession(
                 checkpoint_dir=params.output, hooks=train_hooks,
                 save_checkpoint_secs=None, config=config) as sess:
-            sess.run(validate_initializer)
             while not sess.should_stop():
                 sess.run(train_op)
                 # res = sess.run(features)

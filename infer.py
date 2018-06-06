@@ -267,21 +267,20 @@ def main(args):
             sess.run(assign_op)
 
             while not sess.should_stop():
-                # result = sess.run(features)
                 result = sess.run(features)
                 newlines = search.recover_features(params, result)
                 write(params, newlines)
 
-                print('------one res----')
-                for k,v in result.items():
-                    print("k", k)
-                    if k=="origin":
-                        print("v", [vv.decode("utf-8") for vv in v])
-                    else:
-                        print("v", v)
-                    print("v_len", v.shape)
-                print("newlines", newlines)
-                x = input()
+                # print('------one res----')
+                # for k,v in result.items():
+                #     print("k", k)
+                #     if k=="origin":
+                #         print("v", [vv.decode("utf-8") for vv in v])
+                #     else:
+                #         print("v", v)
+                #     print("v_len", v.shape)
+                # print("newlines", newlines)
+                # x = input()
 
 
 if __name__ == "__main__":
