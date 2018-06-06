@@ -92,8 +92,6 @@ def model_x(hidden_size, dropout, inputs, inputs_length, model, params):
 
         # build layer
         outputs, final_state = tf.nn.dynamic_rnn(lstm_cell, inputs, sequence_length=inputs_length, dtype=inputs.dtype)
-        print("====debug====")
-        print(outputs)
 
         # outputs [batch_size, time_steps, hidden_size] -> [batch_size, hight, width, channel]
         # filter [hight, width, inchannel, outchannel]
@@ -104,8 +102,7 @@ def model_x(hidden_size, dropout, inputs, inputs_length, model, params):
         strides = [1, 1, 1, 1]
         outputs = tf.nn.conv2d(outputs, filters, strides, padding="SAME", data_format="NHWC")
         outputs = tf.squeeze(outputs, -1)
-        print("====debug====")
-        print(outputs)
+
     elif int(model)==4:
         lstm_cell_1 = tf.nn.rnn_cell.LSTMCell(hidden_size, reuse=tf.AUTO_REUSE, name="lstm_cell_1")
         lstm_cell_1 = tf.nn.rnn_cell.DropoutWrapper(lstm_cell_1, output_keep_prob=1-dropout)
@@ -115,8 +112,6 @@ def model_x(hidden_size, dropout, inputs, inputs_length, model, params):
 
         # build layer
         outputs, final_state = tf.nn.dynamic_rnn(multi_lstm_cell, inputs, sequence_length=inputs_length, dtype=inputs.dtype)
-        print("====debug====")
-        print(outputs)
 
         # outputs [batch_size, time_steps, hidden_size]
         # channel = inputs.get_shape()[1].value
@@ -127,8 +122,6 @@ def model_x(hidden_size, dropout, inputs, inputs_length, model, params):
         outputs = tf.nn.conv2d(outputs, filters, strides, padding="SAME", data_format="NHWC")
         outputs = tf.squeeze(outputs, -1)
 
-        print("====debug====")
-        print(outputs)
     else:
         raise NotImplementedError()
     return outputs

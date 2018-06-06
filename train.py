@@ -132,8 +132,8 @@ def build_params(args):
     params2 = import_parameters(args.output)
     params = merge_parameters(params1, params2)
     params = overwrite_parameters(params, args)
-    if params.vocab is None:
-        params.vocab, params.vocabback, params.transtion = data.build_vocab_trans(params.input, params.tag)
+    if params.vocab is None or params.vocabback is None or params.transition is None:
+        params.vocab, params.vocabback, params.transition = data.build_vocab_trans(params.input, params.tag)
     export_parameters(args.output, params)
 
     return params
