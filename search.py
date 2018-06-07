@@ -4,6 +4,7 @@ INF = 1e30
 
 def recover_line_viterbi(param, line, start, end, logprobs):
     transition = param.transition
+    transition = [[prob/sum(line) for prob in line] for line in transition]
     logtransition = [[-INF if prob==0.0 else math.log(prob) for prob in line] for line in transition]
 
     tag_type = len(param.tag)
@@ -19,12 +20,12 @@ def recover_line_viterbi(param, line, start, end, logprobs):
         else:
             for j in range(tag_type):
                 max_index=0
-                max_value=dp[i-1][0]
+                max_value=dp[i-1][0]+logtransition[0][j]
                 for k in range(tag_type):
-                    if dp[i-1][k]>max_value:
-                        max_value=dp[i-1][k]
+                    if dp[i-1][k]+logtransition[k][j]>max_value:
+                        max_value=dp[i-1][k]+logtransition[k][j]
                         max_index=k
-                dp[i][j] = max_value+logprobs[i][j]+logtransition[mark[i-1][max_index]][j]
+                dp[i][j] = max_value
                 mark[i][j] = max_index
 
     # find the biggest value
