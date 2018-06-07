@@ -18,8 +18,8 @@ def recover_line_viterbi(param, line, start, end, logprobs):
                 mark[i][j]=-1
         else:
             for j in range(tag_type):
-                max_index=-1
-                max_value=-1
+                max_index=0
+                max_value=dp[i-1][0]
                 for k in range(tag_type):
                     if dp[i-1][k]>max_value:
                         max_value=dp[i-1][k]
@@ -31,8 +31,8 @@ def recover_line_viterbi(param, line, start, end, logprobs):
     print("start", start)
     print("end", end)
     print(dp[end-1])
-    max_index = -1
-    max_value = -1
+    max_index = 0
+    max_value = dp[end-1][0]
     for i in range(tag_type):
         if dp[end-1][i] > max_value:
             max_value = dp[end-1][i]
