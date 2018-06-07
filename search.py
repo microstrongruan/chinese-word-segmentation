@@ -69,6 +69,7 @@ def recover_line_viterbi(param, line, start, end, logprobs):
     print("logtransition", logtransition)
     print("dp", dp)
     print("mark", mark)
+    print("track_back_tag", track_back_tag)
     x = input()
 
     return newline
