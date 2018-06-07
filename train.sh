@@ -25,11 +25,13 @@ INPUT=$CTB6TRAIN
 VALIDATION=$CTB6TEST
 REFERENCE=$CTB6GOLD
 DEVICE=6
+MODEL=1
+OUTPUT=train_model1_loss1
 
 python /home/rjq/project/chinese-word-segmentation/train.py \
     --input $INPUT \
-    --output train \
-    --model 1 \
+    --output $OUTPUT \
+    --model $MODEL \
     --validation $VALIDATION \
     --reference $REFERENCE \
     --parameters device_list=[$DEVICE],batch_size=128,validate_steps=500,hidden_size=1000

@@ -233,6 +233,7 @@ def write(params, newlines):
     with open(output_file, "a") as f:
         for line in newlines:
             f.writelines(line)
+            f.writelines()
 
 
 def main(args):
