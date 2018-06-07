@@ -28,6 +28,9 @@ def recover_line_viterbi(param, line, start, end, logprobs):
                 mark[i][j] = max_index
 
     # find the biggest value
+    print("start", start)
+    print("end", end)
+    print(dp[end-1])
     max_index = -1
     max_value = -1
     for i in range(tag_type):
@@ -49,13 +52,14 @@ def recover_line_viterbi(param, line, start, end, logprobs):
     # line = line.decode("utf-8")
     # x = input()
 
-    line = line.decode("utf-8")
+    line = line.decode("utf-8").strip()
     newline = ""
     print("===debug===")
     print(line)
     print(len(line))
     print(track_back_tag)
     print(len(track_back_tag))
+    x = input()
     # assert len(line)==len(track_back_tag),"tags numgber is different from chars number"
     for i in range(len(track_back_tag)):
         if track_back_tag[i] == param.tag["B"] or \
