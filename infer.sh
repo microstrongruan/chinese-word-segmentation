@@ -9,7 +9,6 @@ export LD_LIBRARY_PATH=/data/disk1/private/zjc/cuda/cuda-9.0/lib64:$LD_LIBRARY_P
 export PATH=/data/disk1/private/zjc/cuda/cuda-9.0/bin:$PATH
 export PYTHONPATH=/Users/ruanjiaqiang/Desktop/programing/python/chinese-word-segmentation:$PYTHONPATH
 
-set -ex
 PKUTRAIN="/home/rjq/project/cws/PKU&MSRA/icwb2-data/training/pku_training.utf8"
 PKUTEST="/home/rjq/project/cws/PKU&MSRA/icwb2-data/testing/pku_test.utf8"
 PKUGOLD="/home/rjq/project/cws/PKU&MSRA/icwb2-data/gold/pku_test_gold.utf8"
@@ -23,17 +22,26 @@ CTB6TEST="/home/rjq/project/cws/CTB6/trainSegmenter/data/ctb6.test.unseg"
 CTB6GOLD="/home/rjq/project/cws/CTB6/trainSegmenter/data/ctb6.test.seg"
 
 
-INPUT=$PKUTEST
-DEVICE=7
-MODEL=8502
-CHECKPOINTS=train/model.ckpt-$MODEL
-OUTPUT=test/pkutest-$MODEL
-JSON=train/params.json
+for ((i=5000;i<=300000;i++));
+    do
+        INPUT=$PKUTEST
+        DEVICE=7
+        MODEL=1
+        CHECKPOINT_MODEL=$i
+        CHECKPOINTS=train/model.ckpt-$CHECKPOINT_MODEL
+        JSON=train/params.json
+        OUTPUT=test/pkutest_model1_loss1_$CHECKPOINT_MODEL
+         if [ -f $CHECKPOINTS.index ];then
+            if [ ! -f $OUTPUT ];then
+            echo $CHECKPOINT_MODEL
+            python /home/rjq/project/chinese-word-segmentation/infer.py \
+                --input $INPUT \
+                --output $OUTPUT \
+                --checkpoints $CHECKPOINTS \
+                --json $JSON \
+                --model $MODEL \
+                --parameters device_list=[$DEVICE],batch_size=1,search_policy=viterbi
+            fi
+         fi
+    done
 
-python /home/rjq/project/chinese-word-segmentation/infer.py \
-    --input $INPUT \
-    --output  $OUTPUT\
-    --checkpoints $CHECKPOINTS \
-    --json $JSON \
-    --model 1 \
-    --parameters device_list=[$DEVICE],batch_size=1,search_policy=viterbi

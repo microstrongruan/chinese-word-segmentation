@@ -173,7 +173,7 @@ def model_graph(params, features, mode="instantiate"):
 
     if mode == "inference":
         logits = logits * tf.expand_dims(char_mask, -1)
-        logprobs = logits - tf.reduce_logsumexp(logits, axis=2, keep_dims=True)
+        logprobs = logits - tf.reduce_logsumexp(logits, axis=2, keepdims=True)
         return logprobs
 
     # build softmax layer
