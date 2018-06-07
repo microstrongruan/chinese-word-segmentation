@@ -122,6 +122,24 @@ def model_x(hidden_size, dropout, inputs, inputs_length, model, params):
         outputs = tf.nn.conv2d(outputs, filters, strides, padding="SAME", data_format="NHWC")
         outputs = tf.squeeze(outputs, -1)
 
+    elif int(model)==5:
+        lstm_cell_f = tf.nn.rnn_cell.LSTMCell(hidden_size, reuse=tf.AUTO_REUSE, name="lstm_cell_f")
+        lstm_cell_f = tf.nn.rnn_cell.DropoutWrapper(lstm_cell_f, output_keep_prob=1-dropout)
+        lstm_cell_b = tf.nn.rnn_cell.LSTMCell(hidden_size, reuse=tf.AUTO_REUSE, name="lstm_cell_b")
+        lstm_cell_b = tf.nn.rnn_cell.DropoutWrapper(lstm_cell_b, output_keep_prob=1-dropout)
+
+        # build layer
+        outputs, final_state = tf.nn.bidirectional_dynamic_rnn(lstm_cell_f,lstm_cell_b, inputs,
+                                                               sequence_length=inputs_length, dtype=inputs.dtype)
+
+        # outputs [batch_size, time_steps, hidden_size]
+        # channel = inputs.get_shape()[1].value
+        outputs = tf.expand_dims(outputs,-1)
+        filters = tf.get_variable("filter", [params.window_size*2+1, 1, 1, 1], tf.float32,
+                                  tf.ones_initializer,trainable=False)
+        strides = [1, 1, 1, 1]
+        outputs = tf.nn.conv2d(outputs, filters, strides, padding="SAME", data_format="NHWC")
+        outputs = tf.squeeze(outputs, -1)
     else:
         raise NotImplementedError()
     return outputs
