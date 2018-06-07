@@ -77,11 +77,13 @@ def recover_line_viterbi(param, line, start, end, logprobs):
 
 def recover_line_greedy(param, line, start, end, logprobs):
     tag = []
-    line = line.decode("utf-8")
+    line = line.decode("utf-8").strip()
+
+    assert len(line)==end-start, "tags numgber is different from chars number"
 
     def find_max(listlike):
-        index=-1
-        value=-1
+        index=0
+        value=listlike[0]
         for i in range(len(listlike)):
             if listlike[i]>value:
                 index=i
