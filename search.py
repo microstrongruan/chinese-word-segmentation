@@ -1,5 +1,5 @@
 import math
-INF = -99999999999999.
+INF = 1e30
 
 
 def recover_line_viterbi(param, line, start, end, logprobs):
