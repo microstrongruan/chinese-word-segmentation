@@ -22,7 +22,7 @@ CTB6TEST="/home/rjq/project/cws/CTB6/trainSegmenter/data/ctb6.test.unseg"
 CTB6GOLD="/home/rjq/project/cws/CTB6/trainSegmenter/data/ctb6.test.seg"
 
 
-for ((i=5000;i<=300000;i++));
+for ((i=0;i<=300000;i++));
     do
         INPUT=$PKUTEST
         DEVICE=7
