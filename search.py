@@ -37,26 +37,29 @@ def recover_line_viterbi(param, line, start, end, logprobs):
             max_index = i
 
     # trace back
-    track_back_tag = [max_index]
-    for i in range(end-1, start, -1):
-        track_back_tag.append(mark[i][track_back_tag[-1]])
+    if start!=end:
+        track_back_tag = [max_index]
+        for i in range(end-1, start, -1):
+            track_back_tag.append(mark[i][track_back_tag[-1]])
 
-    reversed(track_back_tag)
+        reversed(track_back_tag)
+    else:
+        track_back_tag=[]
 
 
     line = line.decode("utf-8").strip()
     newline = ""
 
-    if len(line)!=len(track_back_tag):
-        print("line", line)
-        print("start", start)
-        print("end", end)
-        print("logprob", logprobs)
-        print("logtransition", logtransition)
-        print("dp", dp)
-        print("mark", mark)
-        print("track_back_tag", track_back_tag)
-        x = input()
+    # if len(line)!=len(track_back_tag):
+    #     print("line", line)
+    #     print("start", start)
+    #     print("end", end)
+    #     print("logprob", logprobs)
+    #     print("logtransition", logtransition)
+    #     print("dp", dp)
+    #     print("mark", mark)
+    #     print("track_back_tag", track_back_tag)
+    #     x = input()
 
     assert len(line)==len(track_back_tag),"tags numgber is different from chars number"
     for i in range(len(track_back_tag)):
@@ -71,18 +74,6 @@ def recover_line_viterbi(param, line, start, end, logprobs):
             else:
                 newline += ""
 
-
-    # debug
-    # print("=====debug=====")
-    # print("line", line)
-    # print("start", start)
-    # print("end", end)
-    # print("logprob", logprobs)
-    # print("logtransition", logtransition)
-    # print("dp", dp)
-    # print("mark", mark)
-    # print("track_back_tag", track_back_tag)
-    # x = input()
 
     return newline
 
