@@ -131,6 +131,8 @@ def model_x(hidden_size, dropout, inputs, inputs_length, model, params):
         # build layer
         outputs, final_state = tf.nn.bidirectional_dynamic_rnn(lstm_cell_f,lstm_cell_b, inputs,
                                                                sequence_length=inputs_length, dtype=inputs.dtype)
+        outputs = tf.stack(outputs,-1)
+        outputs = linear_layer(outputs,hidden_size,name="fuse_f_b")
 
         # outputs [batch_size, time_steps, hidden_size]
         # channel = inputs.get_shape()[1].value
