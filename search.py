@@ -51,6 +51,11 @@ def recover_line_viterbi(param, line, start, end, logprobs):
 
     line = line.decode("utf-8")
     newline = ""
+    print("===debug===")
+    print(line)
+    print(len(line))
+    print(track_back_tag)
+    print(len(track_back_tag))
     assert len(line)==len(track_back_tag),"tags numgber is different from chars number"
     for i in range(len(track_back_tag)):
         if track_back_tag[i] == param.tag["B"] or \
