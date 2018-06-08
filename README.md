@@ -1,11 +1,11 @@
-#Chinese Word Segmentation
+# Chinese Word Segmentation
 
 Class project
 
-#Requirement
+# Requirement
 1. tensorflow 1.8
 
-#Usage
+# Usage
 
 1. set train, validation, test file in train.sh, infer.sh and score.sh
 2. set pythonpath and cuda path in train.sh, infer.sh and score.sh
@@ -18,14 +18,14 @@ chmod +x score.sh
 ./score.sh
 ```
 
-#Model
+# Model
 please reference to 
 Long short-term memory neural networks for chinese word segmentation
 http://www.aclweb.org/anthology/D15-1141
 
 model5 is an extendtion to bi-directional lstm.
 
-#Result
+# Results
 parameters:  
 vocab_size = hidden_size = 1000  
 learning_rate = 1e-4 without decay  
@@ -62,5 +62,5 @@ CTB6:
 |Model4|93.9|93.6|93.7|
 |Model5|91.6|91.1|91.4|
 
-#Checkpoints and more results
+# Checkpoints and more results
 https://pan.baidu.com/s/15Lr0CXmSIVEG2peFangL9w
