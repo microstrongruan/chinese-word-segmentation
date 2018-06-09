@@ -23,7 +23,7 @@ please reference to
 Long short-term memory neural networks for chinese word segmentation
 http://www.aclweb.org/anthology/D15-1141
 
-model5 is an extendtion to bi-directional lstm.
+model5 is an extension to bi-directional lstm.
 
 # Results
 parameters:  
